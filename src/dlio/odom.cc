@@ -34,7 +34,9 @@ dlio::OdomNode::OdomNode() : Node("dlio_odom_node") {
   this->lidar_cb_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   auto lidar_sub_opt = rclcpp::SubscriptionOptions();
   lidar_sub_opt.callback_group = this->lidar_cb_group;
-  this->lidar_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("pointcloud", 1,
+  auto lidar_sub_qos = rclcpp::SensorDataQoS();
+  lidar_sub_qos.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+  this->lidar_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("pointcloud", lidar_sub_qos,
       std::bind(&dlio::OdomNode::callbackPointCloud, this, std::placeholders::_1), lidar_sub_opt);
 
   this->imu_cb_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
