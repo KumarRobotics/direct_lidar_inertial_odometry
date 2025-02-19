@@ -31,10 +31,16 @@
     odom/imu/calibration/time: 3.0
     odom/imu/bufferSize: 5000
 
+    # A box crop is taken of the original point cloud before any pre-processing
+    # This is similar to the blind parameter to filter out point too close to the sensor
     odom/preprocessing/cropBoxFilter/size: 1.0
-    odom/preprocessing/voxelFilter/res: 0.25
+    # Input cloud downsampled to this resolution after box crop
+    # Impacts memory usage (Default: 0.25)
+    odom/preprocessing/voxelFilter/res: 0.75
 
-    odom/keyframe/threshD: 1.0
+    # Keyframe generating distance and rotation angle threshold
+    # Default: 1.0m, 45 degrees
+    odom/keyframe/threshD: 2.0
     odom/keyframe/threshR: 45.0
 
     odom/submap/keyframe/knn: 10
