@@ -34,8 +34,8 @@ dlio::OdomNode::OdomNode() : Node("dlio_odom_node") {
   this->lidar_cb_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   auto lidar_sub_opt = rclcpp::SubscriptionOptions();
   lidar_sub_opt.callback_group = this->lidar_cb_group;
-  auto lidar_sub_qos = rclcpp::SensorDataQoS();
-  lidar_sub_qos.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+  auto lidar_sub_qos = rclcpp::QoS(10);
+  lidar_sub_qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
   this->lidar_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("pointcloud", lidar_sub_qos,
       std::bind(&dlio::OdomNode::callbackPointCloud, this, std::placeholders::_1), lidar_sub_opt);
 
@@ -1617,6 +1617,7 @@ void dlio::OdomNode::updateKeyframes() {
 
 }
 
+// EDITED(Ankit): Only enabling adaptive parameters for GICP max correspondence distance
 void dlio::OdomNode::setAdaptiveParams() {
 
   // Spaciousness
@@ -1625,7 +1626,7 @@ void dlio::OdomNode::setAdaptiveParams() {
   if (sp < 0.5) { sp = 0.5; }
   if (sp > 5.0) { sp = 5.0; }
 
-  this->keyframe_thresh_dist_ = sp;
+  // this->keyframe_thresh_dist_ = sp;
 
   // Density
   float den = this->metrics.density.back();
@@ -1639,7 +1640,7 @@ void dlio::OdomNode::setAdaptiveParams() {
   this->gicp.setMaxCorrespondenceDistance(den);
 
   // Concave hull alpha
-  this->concave_hull.setAlpha(this->keyframe_thresh_dist_);
+  // this->concave_hull.setAlpha(this->keyframe_thresh_dist_);
 
 }
 
