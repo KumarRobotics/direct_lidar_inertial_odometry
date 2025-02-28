@@ -12,7 +12,9 @@
 
 /**:
   ros__parameters:
-    use_sim_time: true
+    # VERY IMPORTANT: If using sim time, make sure to all --clock to your bag file playback
+    # DLIO drifts sometimes when --clock is not used
+    use_sim_time: false
     frames/odom: odom
     frames/baselink: base_link
     frames/lidar: lidar
@@ -40,7 +42,9 @@
 
     # Keyframe generating distance and rotation angle threshold
     # Default: 1.0m, 45 degrees
-    odom/keyframe/threshD: 2.0
+    # Outdoor environments: 6.0-8.0m
+    # Indoor environments: 2.0-3.0m
+    odom/keyframe/threshD: 6.0
     odom/keyframe/threshR: 45.0
 
     odom/submap/keyframe/knn: 10
