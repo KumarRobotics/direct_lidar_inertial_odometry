@@ -17,7 +17,7 @@
 
 #include "rclcpp/qos.hpp"
 
-dlio::OdomNode::OdomNode() : Node("dlio_odom_node") {
+dlio::OdomNode::OdomNode(const rclcpp::NodeOptions & options) : Node("dlio_odom_node", options) {
 
   this->getParams();
 
@@ -2013,3 +2013,6 @@ void dlio::OdomNode::debug() {
   std::cout << "+-------------------------------------------------------------------+" << std::endl;
 
 }
+
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(dlio::OdomNode)

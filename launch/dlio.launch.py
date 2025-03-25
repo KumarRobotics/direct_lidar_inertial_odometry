@@ -12,7 +12,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition   
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
+from launch_ros.actions import Node, ComposableNodeContainer, LoadComposableNodes
+from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
@@ -44,33 +45,45 @@ def generate_launch_description():
     dlio_yaml_path = PathJoinSubstitution([current_pkg, 'cfg', 'dlio.yaml'])
     dlio_params_yaml_path = PathJoinSubstitution([current_pkg, 'cfg', 'params.yaml'])
 
-    # DLIO Odometry Node
-    dlio_odom_node = Node(
-        package='direct_lidar_inertial_odometry',
-        executable='dlio_odom_node',
-        output='screen',
-        parameters=[dlio_yaml_path, dlio_params_yaml_path],
-        remappings=[
-            ('pointcloud', pointcloud_topic),
-            ('imu', imu_topic),
-            ('odom', 'dlio/odom_node/odom'),
-            ('pose', 'dlio/odom_node/pose'),
-            ('path', 'dlio/odom_node/path'),
-            ('kf_pose', 'dlio/odom_node/keyframes'),
-            ('kf_cloud', 'dlio/odom_node/pointcloud/keyframe'),
-            ('deskewed', 'dlio/odom_node/pointcloud/deskewed'),
-        ],
+    # Component container with a unique name
+    composable_node_container = ComposableNodeContainer(
+        name="direct_lidar_inertial_odometry_component_container", 
+        namespace="direct_lidar_inertial_odometry_ns", 
+        package='rclcpp_components',
+        executable='component_container',
+        output='screen'
     )
 
-    # DLIO Mapping Node
-    dlio_map_node = Node(
-        package='direct_lidar_inertial_odometry',
-        executable='dlio_map_node',
-        output='screen',
-        parameters=[dlio_yaml_path, dlio_params_yaml_path],
-        remappings=[
-            ('keyframes', 'dlio/odom_node/pointcloud/keyframe'),
-        ],
+        # Load the component explicitly
+    composable_nodes = LoadComposableNodes(
+        target_container="direct_lidar_inertial_odometry_ns/direct_lidar_inertial_odometry_component_container",
+        composable_node_descriptions=[
+            ComposableNode(
+                package='direct_lidar_inertial_odometry',
+                plugin='dlio::OdomNode',
+                name='dlio_odom',
+                parameters=[dlio_yaml_path, dlio_params_yaml_path],
+                remappings=[
+                    ('pointcloud', pointcloud_topic),
+                    ('imu', imu_topic),
+                    ('odom', 'dlio/odom_node/odom'),
+                    ('pose', 'dlio/odom_node/pose'),
+                    ('path', 'dlio/odom_node/path'),
+                    ('kf_pose', 'dlio/odom_node/keyframes'),
+                    ('kf_cloud', 'dlio/odom_node/pointcloud/keyframe'),
+                    ('deskewed', 'dlio/odom_node/pointcloud/deskewed')
+                ]
+            ),
+            ComposableNode(
+                package='direct_lidar_inertial_odometry',
+                plugin='dlio::MapNode',
+                name='dlio_map',
+                parameters=[dlio_yaml_path, dlio_params_yaml_path],
+                remappings=[
+                    ('keyframes', 'dlio/odom_node/pointcloud/keyframe')
+                ]
+            )
+        ]
     )
 
     # RViz node
@@ -88,7 +101,7 @@ def generate_launch_description():
         declare_rviz_arg,
         declare_pointcloud_topic_arg,
         declare_imu_topic_arg,
-        dlio_odom_node,
-        dlio_map_node,
+        composable_node_container,
+        composable_nodes,
         rviz_node
     ])

@@ -26,7 +26,7 @@ class dlio::MapNode: public rclcpp::Node {
 
 public:
 
-  MapNode();
+  MapNode(const rclcpp::NodeOptions & options);
   ~MapNode();
 
   void start();

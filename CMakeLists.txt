@@ -15,6 +15,7 @@ project(direct_lidar_inertial_odometry)
 find_package(rosidl_default_generators REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -22,7 +23,7 @@ find_package(nav_msgs REQUIRED)
 find_package(pcl_ros REQUIRED)
 
 find_package(PCL REQUIRED)
-find_package( Eigen3 REQUIRED )
+find_package(Eigen3 REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_BUILD_TYPE "Release")
@@ -63,15 +64,22 @@ add_library(nano_gicp STATIC
 target_link_libraries(nano_gicp ${PCL_LIBRARIES} ${OpenMP_LIBS} nanoflann)
 ament_target_dependencies(nano_gicp)
 
-# Odometry Node
-add_executable(dlio_odom_node src/dlio/odom_node.cc src/dlio/odom.cc)
-target_link_libraries(dlio_odom_node ${PCL_LIBRARIES} ${OpenMP_LIBS} Threads::Threads nano_gicp)
-ament_target_dependencies(dlio_odom_node "tf2_ros" "pcl_ros" "nav_msgs" "pcl_conversions" "rclcpp" "sensor_msgs" "geometry_msgs")
+# Make container library
+add_library(dlio_container SHARED src/dlio/odom.cc src/dlio/map.cc)
+target_link_libraries(dlio_container ${PCL_LIBRARIES} ${OpenMP_LIBS} ${cpp_typesupport_target} Threads::Threads nano_gicp)
+ament_target_dependencies(dlio_container "tf2_ros" "pcl_ros" "nav_msgs" "pcl_conversions" "rclcpp" "sensor_msgs" "geometry_msgs")
 
-# Mapping Node
-add_executable (dlio_map_node src/dlio/map_node.cc src/dlio/map.cc)
-target_link_libraries(dlio_map_node ${PCL_LIBRARIES}  ${cpp_typesupport_target})
-ament_target_dependencies(dlio_map_node "tf2_ros" "pcl_ros" "pcl_conversions" "rclcpp")
+# Register Nodes
+rclcpp_components_register_node(
+  dlio_container
+    PLUGIN "dlio::OdomNode"
+    EXECUTABLE odom_node
+)
+rclcpp_components_register_node(
+  dlio_container
+    PLUGIN "dlio::MapNode"
+    EXECUTABLE map_node
+)
 
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME} nano_gicp nanoflann)
@@ -79,11 +87,14 @@ ament_export_dependencies(rclcpp std_msgs sensor_msgs geometry_msgs pcl_ros)
 ament_package()
 
 # Binaries
-install( TARGETS dlio_odom_node dlio_map_node
-         DESTINATION lib/${PROJECT_NAME} 
-)
-install( DIRECTORY cfg launch
-         DESTINATION share/${PROJECT_NAME} 
+install(
+  TARGETS dlio_container
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  )
+install(DIRECTORY cfg launch
+        DESTINATION share/${PROJECT_NAME} 
 )
 
 add_compile_options(-std=c++14)
@@ -103,7 +114,3 @@ file(REMOVE ${CMAKE_BINARY_DIR}/test_cpuid.cpp)
 if(HAS_CPUID)
   add_compile_definitions(HAS_CPUID)
 endif()
-
-target_compile_options(dlio_odom_node PRIVATE ${OpenMP_FLAGS})
-
-target_compile_options(dlio_map_node PRIVATE ${OpenMP_FLAGS})
