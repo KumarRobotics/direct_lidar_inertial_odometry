@@ -50,13 +50,7 @@ def generate_launch_description():
         name="direct_lidar_inertial_odometry_component_container", 
         namespace="direct_lidar_inertial_odometry_ns", 
         package='rclcpp_components',
-        executable='component_container',
-        output='screen'
-    )
-
-        # Load the component explicitly
-    composable_nodes = LoadComposableNodes(
-        target_container="direct_lidar_inertial_odometry_ns/direct_lidar_inertial_odometry_component_container",
+        executable='component_container_mt',
         composable_node_descriptions=[
             ComposableNode(
                 package='direct_lidar_inertial_odometry',
@@ -84,6 +78,7 @@ def generate_launch_description():
                 ]
             )
         ]
+        output='screen'
     )
 
     # RViz node
@@ -102,6 +97,5 @@ def generate_launch_description():
         declare_pointcloud_topic_arg,
         declare_imu_topic_arg,
         composable_node_container,
-        composable_nodes,
         rviz_node
     ])
