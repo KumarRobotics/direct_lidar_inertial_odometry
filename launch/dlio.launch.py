@@ -77,7 +77,7 @@ def generate_launch_description():
                     ('keyframes', 'dlio/odom_node/pointcloud/keyframe')
                 ]
             )
-        ]
+        ],
         output='screen'
     )
 
