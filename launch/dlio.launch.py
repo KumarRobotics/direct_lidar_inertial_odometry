@@ -12,7 +12,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition   
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node, ComposableNodeContainer, LoadComposableNodes
+from launch_ros.actions import Node, LoadComposableNodes
 from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
 
@@ -46,11 +46,8 @@ def generate_launch_description():
     dlio_params_yaml_path = PathJoinSubstitution([current_pkg, 'cfg', 'params.yaml'])
 
     # Component container with a unique name
-    composable_node_container = ComposableNodeContainer(
-        name="direct_lidar_inertial_odometry_component_container", 
-        namespace="direct_lidar_inertial_odometry_ns", 
-        package='rclcpp_components',
-        executable='component_container_mt',
+    load_composable_nodes = LoadComposableNodes(
+        target_container='/ouster/os_container',
         composable_node_descriptions=[
             ComposableNode(
                 package='direct_lidar_inertial_odometry',
@@ -78,7 +75,6 @@ def generate_launch_description():
                 ]
             )
         ],
-        output='screen'
     )
 
     # RViz node
@@ -96,6 +92,6 @@ def generate_launch_description():
         declare_rviz_arg,
         declare_pointcloud_topic_arg,
         declare_imu_topic_arg,
-        composable_node_container,
+        load_composable_nodes,
         rviz_node
     ])
