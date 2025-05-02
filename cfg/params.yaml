@@ -56,7 +56,7 @@
     odom/gicp/maxIterations: 32
     odom/gicp/transformationEpsilon: 0.01
     odom/gicp/rotationEpsilon: 0.01
-    odom/gicp/initLambdaFactor: 1e-9
+    odom/gicp/initLambdaFactor: 0.000000001
 
     odom/geo/Kp: 4.5
     odom/geo/Kv: 11.25

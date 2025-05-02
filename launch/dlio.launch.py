@@ -12,7 +12,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition   
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
+from launch_ros.actions import Node, LoadComposableNodes
+from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
@@ -20,8 +21,9 @@ def generate_launch_description():
 
     # Set default arguments
     rviz = LaunchConfiguration('rviz', default='false')
-    pointcloud_topic = LaunchConfiguration('pointcloud_topic', default='points_raw')
-    imu_topic = LaunchConfiguration('imu_topic', default='imu_raw')
+    pointcloud_topic = LaunchConfiguration('pointcloud_topic', default='/ouster/points')
+    imu_topic = LaunchConfiguration('imu_topic', default='/ouster/imu')
+    container_name = LaunchConfiguration('container_name', default='/ouster/os_container')
 
     # Define arguments
     declare_rviz_arg = DeclareLaunchArgument(
@@ -39,37 +41,45 @@ def generate_launch_description():
         default_value=imu_topic,
         description='IMU topic name'
     )
+    declare_container_name_arg = DeclareLaunchArgument(
+        'container_name',
+        default_value=container_name,
+        description='Name of the container to load nodes into'
+    )
 
     # Load parameters
     dlio_yaml_path = PathJoinSubstitution([current_pkg, 'cfg', 'dlio.yaml'])
     dlio_params_yaml_path = PathJoinSubstitution([current_pkg, 'cfg', 'params.yaml'])
 
-    # DLIO Odometry Node
-    dlio_odom_node = Node(
-        package='direct_lidar_inertial_odometry',
-        executable='dlio_odom_node',
-        output='screen',
-        parameters=[dlio_yaml_path, dlio_params_yaml_path],
-        remappings=[
-            ('pointcloud', pointcloud_topic),
-            ('imu', imu_topic),
-            ('odom', 'dlio/odom_node/odom'),
-            ('pose', 'dlio/odom_node/pose'),
-            ('path', 'dlio/odom_node/path'),
-            ('kf_pose', 'dlio/odom_node/keyframes'),
-            ('kf_cloud', 'dlio/odom_node/pointcloud/keyframe'),
-            ('deskewed', 'dlio/odom_node/pointcloud/deskewed'),
-        ],
-    )
-
-    # DLIO Mapping Node
-    dlio_map_node = Node(
-        package='direct_lidar_inertial_odometry',
-        executable='dlio_map_node',
-        output='screen',
-        parameters=[dlio_yaml_path, dlio_params_yaml_path],
-        remappings=[
-            ('keyframes', 'dlio/odom_node/pointcloud/keyframe'),
+    # Component container with a unique name
+    load_composable_nodes = LoadComposableNodes(
+        target_container=container_name,
+        composable_node_descriptions=[
+            ComposableNode(
+                package='direct_lidar_inertial_odometry',
+                plugin='dlio::OdomNode',
+                name='dlio_odom',
+                parameters=[dlio_yaml_path, dlio_params_yaml_path],
+                remappings=[
+                    ('pointcloud', pointcloud_topic),
+                    ('imu', imu_topic),
+                    ('odom', 'dlio/odom_node/odom'),
+                    ('pose', 'dlio/odom_node/pose'),
+                    ('path', 'dlio/odom_node/path'),
+                    ('kf_pose', 'dlio/odom_node/keyframes'),
+                    ('kf_cloud', 'dlio/odom_node/pointcloud/keyframe'),
+                    ('deskewed', 'dlio/odom_node/pointcloud/deskewed')
+                ]
+            ),
+            ComposableNode(
+                package='direct_lidar_inertial_odometry',
+                plugin='dlio::MapNode',
+                name='dlio_map',
+                parameters=[dlio_yaml_path, dlio_params_yaml_path],
+                remappings=[
+                    ('keyframes', 'dlio/odom_node/pointcloud/keyframe')
+                ]
+            )
         ],
     )
 
@@ -88,7 +98,7 @@ def generate_launch_description():
         declare_rviz_arg,
         declare_pointcloud_topic_arg,
         declare_imu_topic_arg,
-        dlio_odom_node,
-        dlio_map_node,
+        declare_container_name_arg,
+        load_composable_nodes,
         rviz_node
     ])

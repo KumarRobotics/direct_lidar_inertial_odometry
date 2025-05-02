@@ -13,7 +13,7 @@
 #include "dlio/map.h"
 #include "dlio/utils.h"
 
-dlio::MapNode::MapNode(): Node("dlio_map_node") {
+dlio::MapNode::MapNode(const rclcpp::NodeOptions & options): Node("dlio_map_node", options) {
 
   this->getParams();
 
@@ -100,3 +100,6 @@ void dlio::MapNode::savePCD(std::shared_ptr<direct_lidar_inertial_odometry::srv:
     std::cout << "failed" << std::endl;
   }
 }
+
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(dlio::MapNode)
