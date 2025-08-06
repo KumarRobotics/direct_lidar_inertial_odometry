@@ -24,6 +24,7 @@ def generate_launch_description():
     pointcloud_topic = LaunchConfiguration('pointcloud_topic', default='/ouster/points')
     imu_topic = LaunchConfiguration('imu_topic', default='/ouster/imu')
     container_name = LaunchConfiguration('container_name', default='/ouster/os_container')
+    namespace = LaunchConfiguration('namespace', default='')
 
     # Define arguments
     declare_rviz_arg = DeclareLaunchArgument(
@@ -46,6 +47,12 @@ def generate_launch_description():
         default_value=container_name,
         description='Name of the container to load nodes into'
     )
+    declare_namespace_arg = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Namespace'
+    )
+
 
     # Load parameters
     dlio_yaml_path = PathJoinSubstitution([current_pkg, 'cfg', 'dlio.yaml'])
@@ -60,6 +67,7 @@ def generate_launch_description():
                 plugin='dlio::OdomNode',
                 name='dlio_odom',
                 parameters=[dlio_yaml_path, dlio_params_yaml_path],
+                namespace=namespace,
                 remappings=[
                     ('pointcloud', pointcloud_topic),
                     ('imu', imu_topic),
@@ -75,6 +83,7 @@ def generate_launch_description():
                 package='direct_lidar_inertial_odometry',
                 plugin='dlio::MapNode',
                 name='dlio_map',
+                namespace=namespace,
                 parameters=[dlio_yaml_path, dlio_params_yaml_path],
                 remappings=[
                     ('keyframes', 'dlio/odom_node/pointcloud/keyframe')
